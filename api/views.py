@@ -13,8 +13,8 @@ def get_products(name):
     products = [{
         'id': product.id,
         'name': product.name,
-        'price': product.price,
-    } for product in Product.objects.filter(name__contains=name, active=True)]
+        'price': float(product.price),
+    } for product in Product.objects.filter(name__icontains=name, active=True)]
     return products
 
 
@@ -62,7 +62,7 @@ def get_customers(name):
     customers = [{
         'id': customer.id,
         'name': customer.name,
-    } for customer in Customer.objects.filter(name__contains=name, active=True)]
+    } for customer in Customer.objects.filter(name__icontains=name, active=True)]
     return customers
 
 
@@ -83,7 +83,7 @@ def customer_actions(request):
         customers = get_customers(request.GET.get('name'))
         return HttpResponse(json.dumps({'customers': customers}), content_type='application/json')
 
-    customer = create_product(json.loads(request.body).get('customer'))
+    customer = create_customer(json.loads(request.body).get('customer'))
     return HttpResponse(
         json.dumps({'msg': f'Cliente cadastrado (#{ customer.id }: { customer.name })'}),
         content_type='application/json',
@@ -95,8 +95,8 @@ def customer_actions(request):
 def get_sellers(name):
     sellers = [{
         'id': seller.id,
-        'name': seller.name,
-    } for seller in Seller.objects.filter(full_name__contains=name, active=True)]
+        'name': seller.full_name,
+    } for seller in Seller.objects.filter(full_name__icontains=name, active=True)]
     return sellers
 
 
@@ -113,7 +113,7 @@ def create_seller(seller):
 @csrf_exempt
 def seller_actions(request):
     if request.method == 'GET':
-        sellers = get_sellers(request.GET.get('full_name'))
+        sellers = get_sellers(request.GET.get('name'))
         return HttpResponse(json.dumps({'sellers': sellers}), content_type='application/json')
 
     seller = create_seller(json.loads(request.body).get('seller'))

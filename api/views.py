@@ -2,14 +2,18 @@ import json
 from datetime import datetime
 
 from django.shortcuts import HttpResponse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST, require_http_methods
 
-from api.models import Product, Customer, Seller
+from api.models import Product, Customer, Seller, Purchase, PurchaseProducts
 
 
 # Views de produtos
 def get_products(name):
-    products = [product.name for product in Product.objects.filter(name__contains=name, active=True)]
+    products = [{
+        'id': product.id,
+        'name': product.name,
+        'price': product.price,
+    } for product in Product.objects.filter(name__contains=name, active=True)]
     return products
 
 
@@ -54,7 +58,10 @@ def product_actions(request):
 
 # Views de clientes
 def get_customers(name):
-    customers = [customer.name for customer in Customer.objects.filter(name__contains=name, active=True)]
+    customers = [{
+        'id': customer.id,
+        'name': customer.name,
+    } for customer in Customer.objects.filter(name__contains=name, active=True)]
     return customers
 
 
@@ -84,7 +91,10 @@ def customer_actions(request):
 
 # Views de vendedores
 def get_sellers(name):
-    sellers = [seller.name for seller in Seller.objects.filter(full_name__contains=name, active=True)]
+    sellers = [{
+        'id': seller.id,
+        'name': seller.name,
+    } for seller in Seller.objects.filter(full_name__contains=name, active=True)]
     return sellers
 
 
@@ -106,6 +116,48 @@ def seller_actions(request):
     seller = create_seller(request.POST.get('seller'))
     return HttpResponse(
         json.dumps({'msg': f'Vendedor cadastrado (#{ seller.id }: { seller.full_name })'}),
+        content_type='application/json',
+        status=201,
+    )
+
+
+# Views de venda
+@require_POST
+def register_purchase(request):
+    data = request.POST.get('purchase')
+
+    if not data.get('purchase'):
+        raise Exception('Não há dados de venda')
+    if not data.get('products'):
+        raise Exception('Não há dados de produto')
+
+    purchase_data = {
+        'price': data.get('price'),
+        'customer': data.get('customer'),
+        'seller': data.get('seller'),
+    }
+
+    Purchase(**purchase_data).save()
+    purchase = Purchase.objects.last()
+
+    products_data = [{
+        'id': product.get('id'),
+        'quantity': product.get('quantity'),
+        'commission_value': (
+            calc_commission(product.get('commission') or 0.0) * (product.get('price') or 0.0) * product.get('quantity')
+        ),
+    } for product in data.get('products')]
+
+    for product in products_data:
+        PurchaseProducts(
+            purchase=purchase.id,
+            product=product.get('id'),
+            quantity=product.get('quantity'),
+            commission=product.get('commission_value'),
+        ).save()
+
+    return HttpResponse(
+        json.dumps({'msg': f'Pedido cadastrado (#{ purchase.id })'}),
         content_type='application/json',
         status=201,
     )

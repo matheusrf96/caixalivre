@@ -4,7 +4,7 @@ from datetime import datetime
 from django.shortcuts import HttpResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Product, Customer
+from api.models import Product, Customer, Seller
 
 
 # Views de produtos
@@ -77,6 +77,35 @@ def customer_actions(request):
     customer = create_product(request.POST.get('customer'))
     return HttpResponse(
         json.dumps({'msg': f'Cliente cadastrado (#{ customer.id }: { customer.name })'}),
+        content_type='application/json',
+        status=201,
+    )
+
+
+# Views de vendedores
+def get_sellers(name):
+    sellers = [seller.name for seller in Seller.objects.filter(full_name__contains=name, active=True)]
+    return sellers
+
+
+def create_seller(seller):
+    seller = {
+        'full_name': seller.get('full_name') or 'Sem nome',
+    }
+
+    Seller(**seller).save()
+    return Seller.objects.last()
+
+
+@require_http_methods(["GET", "POST"])
+def seller_actions(request):
+    if request.method == 'GET':
+        sellers = get_sellers(request.GET.get('full_name'))
+        return HttpResponse(json.dumps({'sellers': sellers}), content_type='application/json')
+
+    seller = create_seller(request.POST.get('seller'))
+    return HttpResponse(
+        json.dumps({'msg': f'Vendedor cadastrado (#{ seller.id }: { seller.full_name })'}),
         content_type='application/json',
         status=201,
     )

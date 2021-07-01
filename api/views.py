@@ -4,12 +4,12 @@ from datetime import datetime
 from django.shortcuts import HttpResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Product
+from api.models import Product, Customer
 
 
 # Views de produtos
 def get_products(name):
-    products = [product.name for product in Product.objects.filter(name__contains=name)]
+    products = [product.name for product in Product.objects.filter(name__contains=name, active=True)]
     return products
 
 
@@ -46,7 +46,37 @@ def product_actions(request):
 
     product = create_product(request.POST.get('product'))
     return HttpResponse(
-        json.dumps({'msg': f'Produto Criado (#{ product.id }: { product.name })'}),
+        json.dumps({'msg': f'Produto cadastrado (#{ product.id }: { product.name })'}),
+        content_type='application/json',
+        status=201,
+    )
+
+
+# Views de clientes
+def get_customers(name):
+    customers = [customer.name for customer in Customer.objects.filter(name__contains=name, active=True)]
+    return customers
+
+
+def create_customer(customer):
+    customer = {
+        'name': customer.get('name') or 'Sem nome',
+        'description': customer.get('description'),
+    }
+
+    Customer(**customer).save()
+    return Customer.objects.last()
+
+
+@require_http_methods(["GET", "POST"])
+def customer_actions(request):
+    if request.method == 'GET':
+        customers = get_customers(request.GET.get('name'))
+        return HttpResponse(json.dumps({'customers': customers}), content_type='application/json')
+
+    customer = create_product(request.POST.get('customer'))
+    return HttpResponse(
+        json.dumps({'msg': f'Cliente cadastrado (#{ customer.id }: { customer.name })'}),
         content_type='application/json',
         status=201,
     )

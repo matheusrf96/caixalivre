@@ -29,11 +29,11 @@ def calc_commission(commission):
 
     if datetime.now().hour <= reference_time.hour:
         if commission > 5.0:
-            return 5.0
-        return commission
+            return (5.0 / 100)
+        return (commission / 100)
 
     if commission < 4.0:
-        return 4.0
+        return (4.0 / 100)
 
     if commission == 0:
         return 0.0

@@ -27,13 +27,6 @@ class Purchase(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    @property
-    def commission(self):
-        return False
-
-    def get_sellers_commission(self, seller, begin_date, end_date):
-        return
-
 
 class PurchaseProducts(models.Model):
     purchase = models.ForeignKey(Purchase, related_name='products', on_delete=models.PROTECT)

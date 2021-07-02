@@ -1,10 +1,11 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.shortcuts import HttpResponse
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum
 
 from api.models import Product, Customer, Seller, Purchase, PurchaseProducts
 
@@ -181,4 +182,59 @@ def register_purchase(request):
         json.dumps({'msg': f'Pedido cadastrado (#{ purchase.id })'}),
         content_type='application/json',
         status=201,
+    )
+
+
+@require_GET
+def get_sellers_commission(request):
+    data = request.GET
+
+    seller_id = data.get('seller')
+
+    if not seller_id:
+        return HttpResponse(
+            json.dumps({'msg': 'O ID do vendedor não foi inserido'}),
+            content_type='application/json',
+            status=400,
+        )
+
+    begin = datetime.now() - timedelta(days=1)
+    end = datetime.now()
+
+    if data.get('begin_date'):
+        begin = datetime.strptime(data.get('begin_date'), '%Y-%m-%d')
+    if data.get('end_date'):
+        end = datetime.strptime(data.get('end_date'), '%Y-%m-%d')
+
+    if begin == end:
+        end += timedelta(days=1) - timedelta(seconds=1)
+    elif end < begin:
+        aux = begin
+        begin = end
+        end = aux
+
+    commission = PurchaseProducts.objects.filter(
+        created_at__gte=begin,
+        created_at__lte=end,
+        purchase__seller_id=seller_id,
+        purchase__seller__active=True,
+    ).aggregate(Sum('commission'))
+
+    if not commission.get('commission__sum'):
+        return HttpResponse(
+            json.dumps({
+                'msg': 'O vendedor não existe ou não possui comissão para este período',
+                'seller_id': seller_id,
+                'commission': 0.0,
+            }),
+            content_type='application/json',
+            status=404,
+        )
+
+    return HttpResponse(
+        json.dumps({
+            'seller_id': seller_id,
+            'commission': float(commission.get('commission__sum')),
+        }),
+        content_type='application/json',
     )

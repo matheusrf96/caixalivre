@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from decimal import Decimal
 
 from django.shortcuts import HttpResponse
 from django.views.decorators.http import require_POST, require_http_methods
@@ -33,7 +34,11 @@ def calc_commission(commission):
 
     if commission < 4.0:
         return 4.0
-    return commission
+
+    if commission == 0:
+        return 0.0
+
+    return (commission / 100)
 
 
 def create_product(product):
@@ -142,35 +147,35 @@ def seller_actions(request):
 def register_purchase(request):
     data = json.loads(request.body).get('purchase')
 
-    if not data.get('purchase'):
+    if not data:
         raise Exception('Não há dados de venda')
     if not data.get('products'):
         raise Exception('Não há dados de produto')
 
     purchase_data = {
-        'price': data.get('price'),
-        'customer': data.get('customer'),
-        'seller': data.get('seller'),
+        'price': 0.0,
+        'customer_id': data.get('customer'),
+        'seller_id': data.get('seller'),
     }
 
     Purchase(**purchase_data).save()
     purchase = Purchase.objects.last()
 
-    products_data = [{
-        'id': product.get('id'),
-        'quantity': product.get('quantity'),
-        'commission_value': (
-            calc_commission(product.get('commission') or 0.0) * (product.get('price') or 0.0) * product.get('quantity')
-        ),
-    } for product in data.get('products')]
+    for product in data.get('products'):
+        purchase.price += Decimal(product.get('price') * product.get('quantity'))
 
-    for product in products_data:
         PurchaseProducts(
-            purchase=purchase.id,
-            product=product.get('id'),
+            purchase_id=purchase.id,
+            product_id=product.get('id'),
             quantity=product.get('quantity'),
-            commission=product.get('commission_value'),
+            commission=(
+                calc_commission(product.get('commission') or 0.0)
+                * (product.get('price') or 0.0)
+                * product.get('quantity')
+            ),
         ).save()
+
+        purchase.save()
 
     return HttpResponse(
         json.dumps({'msg': f'Pedido cadastrado (#{ purchase.id })'}),

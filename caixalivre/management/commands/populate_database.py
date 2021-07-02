@@ -35,6 +35,28 @@ class Command(BaseCommand):
             }
             requests.post('http://localhost:8000/api/customers', json.dumps(data))
 
+        data = {
+            'purchase': {
+                'customer': 5,
+                'seller': 5,
+                'products': [
+                    {
+                        'id': 5,
+                        'quantity': 5,
+                        'price': 50.00,
+                        'commission': 5,
+                    },
+                    {
+                        'id': 3,
+                        'quantity': 3,
+                        'price': 100.00,
+                        'commission': 10,
+                    },
+                ]
+            }
+        }
+        requests.post('http://localhost:8000/api/purchases', json.dumps(data))
+
     def handle(self, *args, **options):
         begin = time.time()
 

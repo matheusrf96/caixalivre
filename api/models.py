@@ -23,8 +23,8 @@ class Product(models.Model):
 
 class Purchase(models.Model):
     price = models.DecimalField(decimal_places=2, max_digits=10)
-    customer = models.OneToOneField(Customer, on_delete=models.PROTECT)
-    seller = models.OneToOneField(Seller, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    seller = models.ForeignKey(Seller, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property

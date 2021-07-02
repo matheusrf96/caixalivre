@@ -10,11 +10,15 @@ from api.models import Product, Customer, Seller, Purchase, PurchaseProducts
 
 # Views de produtos
 def get_products(name):
+    if not name:
+        return []
+
     products = [{
         'id': product.id,
         'name': product.name,
         'price': float(product.price),
     } for product in Product.objects.filter(name__icontains=name, active=True)]
+
     return products
 
 
@@ -59,10 +63,14 @@ def product_actions(request):
 
 # Views de clientes
 def get_customers(name):
+    if not name:
+        return []
+
     customers = [{
         'id': customer.id,
         'name': customer.name,
     } for customer in Customer.objects.filter(name__icontains=name, active=True)]
+
     return customers
 
 
@@ -93,10 +101,14 @@ def customer_actions(request):
 
 # Views de vendedores
 def get_sellers(name):
+    if not name:
+        return []
+
     sellers = [{
         'id': seller.id,
         'name': seller.full_name,
     } for seller in Seller.objects.filter(full_name__icontains=name, active=True)]
+
     return sellers
 
 

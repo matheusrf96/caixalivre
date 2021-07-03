@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum
 
 from api.models import Product, Customer, Seller, Purchase, PurchaseProducts
+from api.decorators import add_cors_react_dev
 
 
 # Views de produtos
@@ -57,6 +58,7 @@ def create_product(product):
 
 
 @require_http_methods(["GET", "POST"])
+@add_cors_react_dev
 @csrf_exempt
 def product_actions(request):
     if request.method == 'GET':
@@ -99,6 +101,7 @@ def create_customer(customer):
 
 @require_http_methods(["GET", "POST"])
 @csrf_exempt
+@add_cors_react_dev
 def customer_actions(request):
     if request.method == 'GET':
         customers = get_customers(request.GET.get('name'))
@@ -139,6 +142,7 @@ def create_seller(seller):
 
 @require_http_methods(["GET", "POST"])
 @csrf_exempt
+@add_cors_react_dev
 def seller_actions(request):
     if request.method == 'GET':
         sellers = get_sellers(request.GET.get('name'))
@@ -155,6 +159,7 @@ def seller_actions(request):
 # Views de venda
 @require_POST
 @csrf_exempt
+@add_cors_react_dev
 def register_purchase(request):
     data = json.loads(request.body).get('purchase')
 
@@ -196,6 +201,7 @@ def register_purchase(request):
 
 
 @require_GET
+@add_cors_react_dev
 def get_sellers_commission(request):
     data = request.GET
 
